@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor Financiero - Gráficos</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Título y Subtítulo Fijos -->
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h1>Gestor Financiero</h1>
+            <p>Yarizbeli Quijada</p>
+            
+            <div class="nav-buttons" style="margin-top: 15px;">
+                <a href="index.html" class="btn"><i class="fas fa-home"></i> Movimientos</a>
+                <a href="presupuestos.html" class="btn"><i class="fas fa-bullseye"></i> Presupuestos & Categorías</a>
+                <a href="graficos.html" class="btn active"><i class="fas fa-chart-bar"></i> Gráficos</a>
+            </div>
+        </div>
+
+        <!-- Resumen Total -->
+        <section class="card summary-card">
+            <h2>Resumen Total del Mes</h2>
+            <div class="summary-grid">
+                <div>
+                    <span>Presupuesto Total:</span>
+                    <h3 id="lbl-presupuesto-total">$0.00</h3>
+                </div>
+                <div>
+                    <span>Total Ingresos:</span>
+                    <h3 id="lbl-ingresos" class="text-green">$0.00</h3>
+                </div>
+                <div>
+                    <span>Total Gastos:</span>
+                    <h3 id="lbl-gastos" class="text-red">$0.00</h3>
+                </div>
+                <div>
+                    <span>Disponible Neto:</span>
+                    <h3 id="lbl-disponible">$0.00</h3>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filtro corregido con el ID que lee app.js -->
+        <div class="filters-section card">
+            <label for="presupuesto-mes-selector">Filtrar por Mes:</label>
+            <input type="month" id="presupuesto-mes-selector">
+            <button id="btn-quitar-filtro" class="btn-secondary">Ver Todo</button>
+        </div>
+
+        <!-- Contenedores de los 3 Gráficos en Columna (Uno debajo del otro) -->
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>Ingresos por Categoría ($)</h3>
+            <div style="position: relative; height: 350px; width: 100%;">
+                <canvas id="graficoIngresos"></canvas>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>Gastos por Categoría ($)</h3>
+            <div style="position: relative; height: 350px; width: 100%;">
+                <canvas id="graficoGastos"></canvas>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>Presupuesto vs Gasto Real por Categoría ($)</h3>
+            <div style="position: relative; height: 450px; width: 100%;">
+                <canvas id="graficoPresupuestos"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
