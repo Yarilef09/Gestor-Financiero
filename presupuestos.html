@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor Financiero - Presupuestos y Categorías</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Título y Subtítulo Fijos -->
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h1>Gestor Financiero</h1>
+            <p>Yarizbeli Quijada</p>
+            
+            <div class="nav-buttons" style="margin-top: 15px;">
+                <a href="index.html" class="btn"><i class="fas fa-home"></i> Movimientos</a>
+                <a href="presupuestos.html" class="btn active"><i class="fas fa-bullseye"></i> Presupuestos & Categorías</a>
+                <a href="graficos.html" class="btn"><i class="fas fa-chart-bar"></i> Gráficos</a>
+            </div>
+        </div>
+
+        <!-- Resumen Total -->
+        <section class="card summary-card">
+            <h2>Resumen Total del Mes</h2>
+            <div class="summary-grid">
+                <div>
+                    <span>Presupuesto Total:</span>
+                    <h3 id="lbl-presupuesto-total">$0.00</h3>
+                </div>
+                <div>
+                    <span>Total Ingresos:</span>
+                    <h3 id="lbl-ingresos" class="text-green">$0.00</h3>
+                </div>
+                <div>
+                    <span>Total Gastos:</span>
+                    <h3 id="lbl-gastos" class="text-red">$0.00</h3>
+                </div>
+                <div>
+                    <span>Disponible Neto:</span>
+                    <h3 id="lbl-disponible">$0.00</h3>
+                </div>
+            </div>
+        </section>
+
+        <!-- Selector de Mes -->
+        <div class="filters-section card">
+            <label for="presupuesto-mes-selector">Mes a Configurar:</label>
+            <input type="month" id="presupuesto-mes-selector">
+        </div>
+
+        <!-- Formularios de Categorías y Presupuesto -->
+        <div class="forms-grid">
+            <!-- Crear Categoría Nueva -->
+            <form id="form-nueva-categoria" class="card">
+                <h3>Crear Nueva Categoría</h3>
+                <div class="form-group">
+                    <label>Tipo:</label>
+                    <select id="nueva-cat-tipo">
+                        <option value="Ingreso">Ingreso</option>
+                        <option value="Gasto">Gasto</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nombre de la Categoría:</label>
+                    <input type="text" id="nueva-cat-nombre" placeholder="Ej. NUEVA CATEGORÍA" required>
+                </div>
+                <button type="submit" class="btn" style="width: 100%; justify-content: center; margin-top: 10px;">Agregar Categoría</button>
+            </form>
+
+            <!-- Asignar Presupuesto por Categoría -->
+            <form id="form-presupuesto" class="card">
+                <h3>Asignar Presupuesto por Categoría de Gasto</h3>
+                <div class="form-group">
+                    <label>Seleccionar Categoría:</label>
+                    <select id="presupuesto-categoria"></select>
+                </div>
+                <div class="form-group">
+                    <label>Límite de Gasto (USD):</label>
+                    <input type="number" step="0.01" id="presupuesto-monto" placeholder="Ej. 150.00" required>
+                </div>
+                <button type="submit" class="btn" style="width: 100%; justify-content: center; margin-top: 10px;">Guardar Presupuesto</button>
+            </form>
+        </div>
+
+        <!-- Progreso y Alertas -->
+        <section class="card">
+            <h3>Progreso de Presupuestos del Mes Seleccionado</h3>
+            <div id="contenedor-progreso-categorias"></div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
