@@ -255,13 +255,13 @@ function sincronizarDatosGlobales() {
     renderizarProgresoCategoriasGeneral();
     calcularYMostrarResumenGeneral();
     
-    // Ejecuta los gráficos si existe la función en la página actual
     if (typeof actualizarGraficos === 'function') {
         actualizarGraficos();
     }
 }
 
 async function obtenerTasaBCV(inputElement) {
+    if (!inputElement) return;
     try {
         inputElement.placeholder = "Consultando BCV...";
         const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
@@ -482,7 +482,6 @@ function actualizarTablaYResumen() {
         const idUnico = m.ID !== undefined ? m.ID : m.id;
         const tr = document.createElement('tr');
         
-        // Se agregaron los atributos data-label para que el diseño responsivo en móvil funcione como tarjetas
         tr.innerHTML = `
             <td data-label="Fecha">${m.fecha}</td>
             <td data-label="Tipo"><span class="badge ${m.tipo.toLowerCase()}">${m.tipo}</span></td>
@@ -589,7 +588,6 @@ function renderizarProgresoCategoriasGeneral() {
     }
 }
 
-// FUNCIÓN PARA RENDERIZAR LOS GRÁFICOS CON CHART.JS (Compatible con graficos.html)
 function actualizarGraficos() {
     const movimientosVisibles = obtenerMovimientosFiltrados();
     const mesSel = document.getElementById('presupuesto-mes-selector') ? document.getElementById('presupuesto-mes-selector').value : mesActualStr;

@@ -46,10 +46,10 @@
             </div>
         </section>
 
-        <!-- Filtro corregido con el ID que lee app.js -->
+        <!-- Filtro -->
         <div class="filters-section card">
-            <label for="presupuesto-mes-selector">Filtrar por Mes:</label>
-            <input type="month" id="presupuesto-mes-selector">
+            <label for="filtro-mes">Filtrar por Mes:</label>
+            <input type="month" id="filtro-mes">
             <button id="btn-quitar-filtro" class="btn-secondary">Ver Todo</button>
         </div>
 
@@ -75,6 +75,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Elemento oculto para sincronizar el selector de mes con app.js -->
+    <input type="month" id="presupuesto-mes-selector" style="display: none;">
 
     <script src="app.js"></script>
 </body>
