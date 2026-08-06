@@ -1,0 +1,326 @@
+:root {
+    --bg-color: #f8fafc;
+    --card-bg: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --border-color: #e2e8f0;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    line-height: 1.5;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+p {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.nav-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.btn:hover {
+    background-color: var(--primary-hover);
+}
+
+.btn.active {
+    background-color: #4338ca;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.btn-secondary {
+    background-color: #475569;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.card {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-color);
+}
+
+.summary-card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 15px;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    text-align: center;
+}
+
+.summary-grid > div {
+    background-color: #f1f5f9;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.summary-grid span {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.summary-grid h3 {
+    font-size: 1.5rem;
+    margin-top: 5px;
+}
+
+.forms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.filters-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    outline: none;
+    background-color: #fff;
+    color: var(--text-primary);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    text-align: left;
+}
+
+th, td {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+th {
+    background-color: #f8fafc;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.text-green { color: var(--success) !important; }
+.text-red { color: var(--danger) !important; }
+.text-muted { color: var(--text-secondary); font-size: 0.85rem; }
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.badge.ingreso { background-color: #dcfce7; color: #15803d; }
+.badge.gasto { background-color: #fee2e2; color: #b91c1c; }
+
+.progress-item {
+    margin-bottom: 20px;
+    background: #f8fafc;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.progress-bar-container {
+    width: 100%;
+    background-color: #e2e8f0;
+    border-radius: 6px;
+    height: 12px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+.bg-green { background-color: var(--success); }
+.bg-red { background-color: var(--danger); }
+
+.toast-alerta {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #1e293b;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    font-weight: 600;
+}
+.toast-alerta.show { transform: translateY(0); opacity: 1; }
+.toast-alerta.success { background-color: var(--success); }
+.toast-alerta.info { background-color: var(--primary); }
+/* --- ESTILOS RESPONSIVOS PARA MOVIMIENTO EN MÓVILES --- */
+@media screen and (max-width: 768px) {
+    /* Ocultamos la cabecera tradicional de la tabla en móvil */
+    .table-container table thead {
+        display: none;
+    }
+
+    /* Cada fila se convierte en una tarjeta flotante */
+    .table-container table, 
+    .table-container tbody, 
+    .table-container tr {
+        display: block;
+        width: 100%;
+    }
+
+    .table-container tr {
+        background: #ffffff;
+        margin-bottom: 15px;
+        padding: 12px 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border: 1px solid #eaeaea;
+        position: relative;
+    }
+
+    /* Cada celda actúa como una línea flexible con etiqueta y valor */
+    .table-container td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        text-align: right;
+        border-bottom: 1px solid #f2f2f2;
+    }
+
+    .table-container td:last-child {
+        border-bottom: none;
+        justify-content: flex-end;
+        padding-top: 10px;
+    }
+
+    /* Etiquetas automáticas usando atributos data-label */
+    .table-container td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #6c757d;
+        text-align: left;
+        padding-right: 10px;
+    }
+}
+/* =========================================
+   AJUSTES RESPONSIVOS PARA MÓVILES
+   ========================================= */
+@media screen and (max-width: 768px) {
+    /* 1. Asegurar que el contenedor principal ocupe todo el ancho sin desbordarse */
+    .container {
+        width: 100% !important;
+        padding: 10px !important;
+        margin: 0 !important;
+        box-sizing: border-box;
+    }
+
+    /* 2. Hacer que las tablas tengan scroll interno suave en lugar de romper la pantalla */
+    .table-responsive, table {
+        width: 100%;
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    /* 3. Ajustar tarjetas y formularios para que no se salgan */
+    .card, .forms-grid, .summary-grid {
+        width: 100% !important;
+        box-sizing: border-box;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    /* 4. Reducir ligeramente los márgenes en pantallas pequeñas */
+    input, select, button {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+}
