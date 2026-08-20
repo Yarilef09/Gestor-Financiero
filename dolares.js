@@ -268,35 +268,37 @@ function procesarYRenderizarDolares() {
     let totalEgrEfectivo = 0;
     let totalIngZelle = 0;
     let totalEgrZelle = 0;
-    let ingresosPorCat = {};
-    let egresosPorCat = {};
+    
+    let ingresosPorCatMetodo = { EFECTIVO: {}, ZELLE: {} };
+    let egresosPorCatMetodo = { EFECTIVO: {}, ZELLE: {} };
 
     const datosConSaldo = listaDolares.map(m => {
         let monto = Number(m.montoUsd) || 0;
         let saldoActualFila = 0;
         const tTrans = (m.tipoTransaccion || '').toUpperCase();
         const esIngreso = tTrans.includes('ING');
+        const metodo = (m.metodo || 'EFECTIVO').toUpperCase();
 
-        if (m.metodo === 'EFECTIVO') {
+        if (metodo === 'EFECTIVO') {
             if (esIngreso) {
                 saldoEfectivoAcumulado += monto;
                 totalIngEfectivo += monto;
-                ingresosPorCat[m.categoria] = (ingresosPorCat[m.categoria] || 0) + monto;
+                ingresosPorCatMetodo.EFECTIVO[m.categoria] = (ingresosPorCatMetodo.EFECTIVO[m.categoria] || 0) + monto;
             } else {
                 saldoEfectivoAcumulado -= monto;
                 totalEgrEfectivo += monto;
-                egresosPorCat[m.categoria] = (egresosPorCat[m.categoria] || 0) + monto;
+                egresosPorCatMetodo.EFECTIVO[m.categoria] = (egresosPorCatMetodo.EFECTIVO[m.categoria] || 0) + monto;
             }
             saldoActualFila = saldoEfectivoAcumulado;
         } else { 
             if (esIngreso) {
                 saldoZelleAcumulado += monto;
                 totalIngZelle += monto;
-                ingresosPorCat[m.categoria] = (ingresosPorCat[m.categoria] || 0) + monto;
+                ingresosPorCatMetodo.ZELLE[m.categoria] = (ingresosPorCatMetodo.ZELLE[m.categoria] || 0) + monto;
             } else {
                 saldoZelleAcumulado -= monto;
                 totalEgrZelle += monto;
-                egresosPorCat[m.categoria] = (egresosPorCat[m.categoria] || 0) + monto;
+                egresosPorCatMetodo.ZELLE[m.categoria] = (egresosPorCatMetodo.ZELLE[m.categoria] || 0) + monto;
             }
             saldoActualFila = saldoZelleAcumulado;
         }
@@ -312,10 +314,10 @@ function procesarYRenderizarDolares() {
 
     const lblSaldoZel = document.getElementById('lbl-saldo-zelle');
     const lblIngZel = document.getElementById('lbl-ing-zelle');
-    const lblEgrZel = document.getElementById('lbl-egr-zelle');
     if (lblSaldoZel) lblSaldoZel.innerText = `$${saldoZelleAcumulado.toFixed(2)}`;
     if (lblIngZel) lblIngZel.innerText = `$${totalIngZelle.toFixed(2)}`;
-    if (lblEgrZel) lblEgrZel.innerText = `$${totalEgrZelle.toFixed(2)}`;
+    const lblEgrZelElem = document.getElementById('lbl-egr-zelle');
+    if (lblEgrZelElem) lblEgrZelElem.innerText = `$${totalEgrZelle.toFixed(2)}`;
 
     const datosInvertidos = [...datosConSaldo].reverse().sort((a, b) => {
         let comparacionFecha = new Date(b.fecha) - new Date(a.fecha);
@@ -368,72 +370,165 @@ function procesarYRenderizarDolares() {
         tbody.appendChild(tr);
     });
 
-    renderizarGraficosDolares(ingresosPorCat, egresosPorCat);
+    renderizarGraficosDolares(ingresosPorCatMetodo, egresosPorCatMetodo);
 }
 
-function renderizarGraficosDolares(ingresosPorCat, egresosPorCat) {
-    const pluginDatalabelsConfig = {
-        anchor: (context) => context.dataset.data[context.dataIndex] === 0 ? 'end' : 'center',
-        align: (context) => context.dataset.data[context.dataIndex] === 0 ? 'top' : 'center',
-        formatter: (value) => `$${Number(value || 0).toFixed(2)}`,
-        font: { weight: 'bold', size: 11 },
-        color: (context) => context.dataset.data[context.dataIndex] === 0 ? '#888' : '#fff',
-        backgroundColor: (context) => context.dataset.data[context.dataIndex] === 0 ? 'transparent' : 'rgba(0, 0, 0, 0.4)',
-        borderColor: 'transparent',
-        borderRadius: 4,
-        padding: 4
+function renderizarGraficosDolares(ingresosPorCatMetodo, egresosPorCatMetodo) {
+    function construirDatosGrafico(catMetodoObj, esIngreso) {
+        const todasPosibles = Array.from(new Set([
+            ...Object.keys(catMetodoObj.EFECTIVO || {}),
+            ...Object.keys(catMetodoObj.ZELLE || {})
+        ]));
+
+        const categoriasFiltradas = todasPosibles.filter(cat => {
+            const valEfe = catMetodoObj.EFECTIVO[cat] || 0;
+            const valZel = catMetodoObj.ZELLE[cat] || 0;
+            return valEfe > 0 || valZel > 0;
+        }).sort();
+
+        const dataEfectivo = categoriasFiltradas.map(cat => {
+            const val = catMetodoObj.EFECTIVO[cat] || 0;
+            return val > 0 ? val : null;
+        });
+
+        const dataZelle = categoriasFiltradas.map(cat => {
+            const val = catMetodoObj.ZELLE[cat] || 0;
+            return val > 0 ? val : null;
+        });
+
+        const colorEfectivo = esIngreso ? 'rgba(40, 167, 69, 0.7)' : 'rgba(220, 53, 69, 0.8)';   
+        const borderEfectivo = esIngreso ? 'rgba(40, 167, 69, 1)' : 'rgba(220, 53, 69, 1)';
+        
+        const colorZelle = esIngreso ? 'rgba(0, 51, 153, 0.8)' : 'rgba(255, 159, 64, 0.8)';    
+        const borderZelle = esIngreso ? 'rgba(0, 51, 153, 1)' : 'rgba(255, 159, 64, 1)';
+
+        return {
+            labels: categoriasFiltradas,
+            datasets: [
+                {
+                    label: 'Efectivo',
+                    data: dataEfectivo,
+                    backgroundColor: colorEfectivo,
+                    borderColor: borderEfectivo,
+                    borderWidth: 1,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.9
+                },
+                {
+                    label: 'Zelle',
+                    data: dataZelle,
+                    backgroundColor: colorZelle,
+                    borderColor: borderZelle,
+                    borderWidth: 1,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.9
+                }
+            ],
+            totalesCategorias: categoriasFiltradas.map((cat) => {
+                const v1 = catMetodoObj.EFECTIVO[cat] || 0;
+                const v2 = catMetodoObj.ZELLE[cat] || 0;
+                return v1 + v2;
+            })
+        };
+    }
+
+    const pluginDatalabelsConfig = (chartData) => ({
+        anchor: 'center',
+        align: 'center',
+        formatter: (value) => {
+            if (value === null || value === 0) return null;
+            return `$${value.toFixed(2)}`;
+        },
+        font: { weight: 'bold', size: 9 },
+        color: (context) => {
+            const value = context.dataset.data[context.dataIndex];
+            return (value === null || value === 0) ? 'transparent' : '#fff';
+        },
+        backgroundColor: (context) => {
+            const value = context.dataset.data[context.dataIndex];
+            return (value === null || value === 0) ? 'transparent' : 'rgba(0, 0, 0, 0.75)';
+        },
+        borderRadius: (context) => {
+            const value = context.dataset.data[context.dataIndex];
+            return (value === null || value === 0) ? 0 : 4;
+        },
+        padding: (context) => {
+            const value = context.dataset.data[context.dataIndex];
+            return (value === null || value === 0) ? 0 : 3;
+        }
+    });
+
+    const pluginTotalEncima = {
+        id: 'pluginTotalEncima',
+        afterDatasetsDraw(chart) {
+            const { ctx } = chart;
+            ctx.save();
+            ctx.font = 'bold 10px sans-serif';
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'center';
+
+            const metaEfe = chart.getDatasetMeta(0);
+            const metaZel = chart.getDatasetMeta(1);
+
+            metaEfe.data.forEach((barEfe, index) => {
+                const barZel = metaZel.data[index];
+                const valEfe = chart.data.datasets[0].data[index] || 0;
+                const valZel = chart.data.datasets[1].data[index] || 0;
+
+                if (valEfe > 0 && valZel > 0) {
+                    const total = valEfe + valZel;
+                    const xCoord = (barEfe.x + barZel.x) / 2;
+                    const yCoord = Math.min(barEfe.y, barZel.y) - 8;
+                    ctx.fillText(`Total: $${total.toFixed(2)}`, xCoord, yCoord);
+                }
+            });
+            ctx.restore();
+        }
     };
 
+    // 1. Gráfico de Ingresos
     const canvasIng = document.getElementById('graficoIngresosDolar');
     if (canvasIng) {
         if (chartIngresosDolarInst) chartIngresosDolarInst.destroy();
+        const configIng = construirDatosGrafico(ingresosPorCatMetodo, true);
+        
         chartIngresosDolarInst = new Chart(canvasIng, {
             type: 'bar',
-            data: {
-                labels: Object.keys(ingresosPorCat),
-                datasets: [{
-                    label: 'Ingresos Dólares ($)',
-                    data: Object.values(ingresosPorCat),
-                    backgroundColor: 'rgba(40, 167, 69, 0.7)',
-                    borderColor: 'rgba(40, 167, 69, 1)',
-                    borderWidth: 1
-                }]
+            data: { labels: configIng.labels, datasets: configIng.datasets },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                scales: {
+                    y: { beginAtZero: true }
+                },
+                plugins: { 
+                    datalabels: pluginDatalabelsConfig(configIng) 
+                } 
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: pluginDatalabelsConfig } },
-            plugins: [ChartDataLabels]
+            plugins: [ChartDataLabels, pluginTotalEncima]
         });
     }
 
+    // 2. Gráfico de Egresos
     const canvasEgr = document.getElementById('graficoEgresosDolar');
     if (canvasEgr) {
         if (chartEgresosDolarInst) chartEgresosDolarInst.destroy();
+        const configEgr = construirDatosGrafico(egresosPorCatMetodo, false);
+        
         chartEgresosDolarInst = new Chart(canvasEgr, {
             type: 'bar',
-            data: {
-                labels: Object.keys(egresosPorCat),
-                datasets: [{
-                    label: 'Egresos Dólares ($)',
-                    data: Object.values(egresosPorCat),
-                    backgroundColor: 'rgba(220, 53, 69, 0.7)',
-                    borderColor: 'rgba(220, 53, 69, 1)',
-                    borderWidth: 1
-                }]
+            data: { labels: configEgr.labels, datasets: configEgr.datasets },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                scales: {
+                    y: { beginAtZero: true }
+                },
+                plugins: { 
+                    datalabels: pluginDatalabelsConfig(configEgr) 
+                } 
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: pluginDatalabelsConfig } },
-            plugins: [ChartDataLabels]
+            plugins: [ChartDataLabels, pluginTotalEncima]
         });
     }
-}
-
-function mostrarNotificacion(mensaje, tipo = 'info') {
-    let alerta = document.getElementById('toast-alerta');
-    if (!alerta) {
-        alerta = document.createElement('div');
-        alerta.id = 'toast-alerta';
-        alerta.className = 'toast-alerta';
-        document.body.appendChild(alerta);
-    }
-    alerta.innerText = mensaje;
-    alerta.className = `toast-alerta show ${tipo}`;
-    setTimeout(() => { alerta.className = 'toast-alerta'; }, 3000);
 }
