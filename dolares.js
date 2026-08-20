@@ -117,7 +117,6 @@ function configurarRealtimeDolares() {
 
 async function cargarDolaresNube() {
     try {
-        // Cargar registros de dólares
         let res = await fetch(`${SUPABASE_URL}/rest/v1/dolares?select=*&order=fecha.asc,ID.asc`, {
             headers: SUPABASE_HEADERS
         });
@@ -125,7 +124,6 @@ async function cargarDolaresNube() {
             listaDolares = await res.json();
         }
 
-        // Cargar también categorías generales de la base de datos por si acaso
         let resCat = await fetch(`${SUPABASE_URL}/rest/v1/categorias?select=*`, {
             headers: SUPABASE_HEADERS
         });
@@ -233,6 +231,30 @@ async function eliminarMovimientoDolar(id) {
     } catch (e) {}
 }
 
+async function actualizarRetiroDolar(id, nuevoRetire) {
+    try {
+        let response = await fetch(`${SUPABASE_URL}/rest/v1/dolares?"ID"=eq.${encodeURIComponent(id)}`, {
+            method: 'PATCH',
+            headers: SUPABASE_HEADERS,
+            body: JSON.stringify({ retire: nuevoRetire })
+        });
+
+        if (response.ok) {
+            const index = listaDolares.findIndex(m => String(m.ID !== undefined ? m.ID : m.id) === String(id));
+            if (index !== -1) {
+                listaDolares[index].retire = nuevoRetire;
+            }
+            mostrarNotificacion('Estado de retiro actualizado', 'success');
+        } else {
+            mostrarNotificacion('No se pudo actualizar el retiro', 'error');
+            await cargarDolaresNube();
+        }
+    } catch (e) {
+        mostrarNotificacion('Error de conexión', 'error');
+        await cargarDolaresNube();
+    }
+}
+
 // --- RENDERIZADO Y GRÁFICOS ---
 
 function procesarYRenderizarDolares() {
@@ -331,7 +353,12 @@ function procesarYRenderizarDolares() {
             <td data-label="Saldo Actual"><strong>$${Number(m.saldoActualFila).toFixed(2)}</strong></td>
             <td data-label="Tasa">Bs.S ${Number(m.tasa).toFixed(2)}</td>
             <td data-label="Descripción">${m.descripcion || ''}</td>
-            <td data-label="Retiro">${m.retire || 'NO'}</td>
+            <td data-label="Retiro">
+                <select onchange="actualizarRetiroDolar('${idUnico}', this.value)" style="width: 70px; padding: 3px 6px; border-radius: 4px; font-size: 0.9rem; text-align: center;">
+                    <option value="NO" ${(!m.retire || m.retire === 'NO') ? 'selected' : ''}>NO</option>
+                    <option value="SI" ${m.retire === 'SI' ? 'selected' : ''}>SÍ</option>
+                </select>
+            </td>
             <td data-label="Acciones">
                 <button class="btn-icon text-red" onclick="eliminarMovimientoDolar('${idUnico}')" title="Eliminar" style="background:none; border:none; cursor:pointer; font-size: 1rem;">
                     <i class="fas fa-trash-alt"></i>
