@@ -25,6 +25,12 @@ const categoriasBase = {
     ]
 };
 
+// Arreglo en memoria para almacenar las categorías creadas en la nube
+let categoriasNube = {
+    Ingreso: [],
+    Gasto: []
+};
+
 const hoy = new Date().toISOString().split('T')[0];
 const mesActualStr = hoy.slice(0, 7);
 
@@ -33,7 +39,7 @@ let chartGastosInstance = null;
 let chartPresupuestosInstance = null;
 let chartImpactoTasasInstance = null;
 
-// CORRECCIÓN CLAVE: Registrar el plugin globalmente para Chart.js v4+
+// Registrar el plugin globalmente para Chart.js v4+
 if (typeof ChartDataLabels !== 'undefined' && typeof Chart !== 'undefined') {
     Chart.register(ChartDataLabels);
 }
@@ -60,8 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (filtroHasta) filtroHasta.addEventListener('change', sincronizarDatosGlobales);
     if (filtroCategoria) filtroCategoria.addEventListener('change', sincronizarDatosGlobales);
 
-    actualizarSelectsCategorias();
-
+    // Cargar datos principales (incluyendo categorías) antes de pintar los selects
     await cargarDatosNube();
     configurarRealtimeSupabase();
 
@@ -259,6 +264,21 @@ async function cargarDatosNube() {
                 };
             });
         }
+
+        // Cargar categorías desde la nueva tabla 'categorias' de Supabase
+        let resCat = await fetch(`${SUPABASE_URL}/rest/v1/categorias?select=*`, {
+            headers: SUPABASE_HEADERS
+        });
+        if (resCat.ok) {
+            let dataCats = await resCat.json();
+            categoriasNube = { Ingreso: [], Gasto: [] };
+            dataCats.forEach(c => {
+                if (c.tipo && c.nombre) {
+                    if (!categoriasNube[c.tipo]) categoriasNube[c.tipo] = [];
+                    categoriasNube[c.tipo].push(c.nombre.toUpperCase());
+                }
+            });
+        }
     } catch (error) {
         console.error("Error al cargar datos de la nube:", error);
     }
@@ -290,6 +310,19 @@ async function cargarDatosNubeSilencioso() {
                 };
             });
         }
+
+        let resCat = await fetch(`${SUPABASE_URL}/rest/v1/categorias?select=*`, { headers: SUPABASE_HEADERS });
+        if (resCat.ok) {
+            let dataCats = await resCat.json();
+            categoriasNube = { Ingreso: [], Gasto: [] };
+            dataCats.forEach(c => {
+                if (c.tipo && c.nombre) {
+                    if (!categoriasNube[c.tipo]) categoriasNube[c.tipo] = [];
+                    categoriasNube[c.tipo].push(c.nombre.toUpperCase());
+                }
+            });
+        }
+
         sincronizarDatosGlobales();
         await calcularYMostrarImpactoTasas();
     } catch (e) {}
@@ -297,10 +330,11 @@ async function cargarDatosNubeSilencioso() {
 
 function obtenerCategoriasDinamicas(tipo) {
     const base = categoriasBase[tipo] || [];
-    const dinamicas = movimientos
+    const extraNube = categoriasNube[tipo] || [];
+    const dinamicasMov = movimientos
         .filter(m => m.tipo === tipo && m.categoria)
         .map(m => m.categoria.toUpperCase());
-    return Array.from(new Set([...base, ...dinamicas])).sort();
+    return Array.from(new Set([...base, ...extraNube, ...dinamicasMov])).sort();
 }
 
 function sincronizarDatosGlobales() {
@@ -621,17 +655,47 @@ async function eliminarPresupuesto(categoria) {
     } catch (e) {}
 }
 
-function agregarNuevaCategoria() {
+async function agregarNuevaCategoria() {
     const tipo = document.getElementById('nueva-cat-tipo').value;
     const nombre = document.getElementById('nueva-cat-nombre').value.trim().toUpperCase();
 
-    if (!nombre || categoriasBase[tipo].includes(nombre)) return;
+    if (!nombre) return;
 
-    categoriasBase[tipo].push(nombre);
-    actualizarSelectsCategorias();
-    const formCat = document.getElementById('form-nueva-categoria');
-    if (formCat) formCat.reset();
-    mostrarNotificacion(`Categoría ${nombre} creada`, 'success');
+    // Validar si ya existe en las listas base o en las de la nube
+    const existentes = obtenerCategoriasDinamicas(tipo);
+    if (existentes.includes(nombre)) {
+        mostrarNotificacion(`La categoría ${nombre} ya existe`, 'error');
+        return;
+    }
+
+    const nuevaCatObj = {
+        tipo: tipo,
+        nombre: nombre
+    };
+
+    try {
+        let response = await fetch(`${SUPABASE_URL}/rest/v1/categorias`, {
+            method: 'POST',
+            headers: SUPABASE_HEADERS,
+            body: JSON.stringify(nuevaCatObj)
+        });
+
+        if (response.ok) {
+            if (!categoriasNube[tipo]) categoriasNube[tipo] = [];
+            categoriasNube[tipo].push(nombre);
+
+            actualizarSelectsCategorias();
+            
+            const formCat = document.getElementById('form-nueva-categoria');
+            if (formCat) formCat.reset();
+            
+            mostrarNotificacion(`Categoría ${nombre} creada exitosamente`, 'success');
+        } else {
+            mostrarNotificacion('Error al guardar la categoría en Supabase', 'error');
+        }
+    } catch (e) {
+        mostrarNotificacion('Error de conexión', 'error');
+    }
 }
 
 function actualizarSelectsCategorias() {
@@ -644,21 +708,15 @@ function actualizarSelectsCategorias() {
     const filtroCat = document.getElementById('filtro-categoria');
 
     if (selectIngresoCat) {
-        selectIngresoCat.innerHTML = catsIngreso.length > 0 
-            ? catsIngreso.map(c => `<option value="${c}">${c}</option>`).join('') 
-            : categoriasBase.Ingreso.map(c => `<option value="${c}">${c}</option>`).join('');
+        selectIngresoCat.innerHTML = catsIngreso.map(c => `<option value="${c}">${c}</option>`).join('');
     }
     
     if (selectGastoCat) {
-        selectGastoCat.innerHTML = catsGasto.length > 0 
-            ? catsGasto.map(c => `<option value="${c}">${c}</option>`).join('') 
-            : categoriasBase.Gasto.map(c => `<option value="${c}">${c}</option>`).join('');
+        selectGastoCat.innerHTML = catsGasto.map(c => `<option value="${c}">${c}</option>`).join('');
     }
     
     if (selectPresupuestoCat) {
-        selectPresupuestoCat.innerHTML = catsGasto.length > 0 
-            ? catsGasto.map(c => `<option value="${c}">${c}</option>`).join('') 
-            : categoriasBase.Gasto.map(c => `<option value="${c}">${c}</option>`).join('');
+        selectPresupuestoCat.innerHTML = catsGasto.map(c => `<option value="${c}">${c}</option>`).join('');
     }
 
     if (filtroCat) {

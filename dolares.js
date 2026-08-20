@@ -1,4 +1,4 @@
-// Configuración de Supabase en la nube
+// --- CONFIGURACIÓN DE SUPABASE Y VARIABLES GLOBALES ---
 const SUPABASE_URL = "https://abghxxvrwabdtlgbffej.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_fgwi1zhb4wT5xullWqLXHg_MBWA7Zh-";
 
@@ -10,6 +10,7 @@ const SUPABASE_HEADERS = {
 };
 
 let listaDolares = [];
+let categoriasNubeDolar = { INGRESOS: [], EGRESOS: [] };
 let chartIngresosDolarInst = null;
 let chartEgresosDolarInst = null;
 const hoy = new Date().toISOString().split('T')[0];
@@ -40,17 +41,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    actualizarSelectCategoriasDolar();
     await cargarDolaresNube();
     configurarRealtimeDolares();
 });
 
-function obtenerCategoriasDinamicasDolar(tipo) {
-    const base = categoriasDolarBase[tipo] || [];
-    const dinamicas = listaDolares
-        .filter(m => m.tipoTransaccion === tipo && m.categoria)
+// --- FUNCIONES DE NORMALIZACIÓN Y CATEGORÍAS ---
+
+function obtenerTipoNormalizado(tipoHtml) {
+    const limpio = (tipoHtml || '').toUpperCase();
+    return (limpio.includes('ING') || limpio.includes('INGRESO')) ? 'INGRESOS' : 'EGRESOS';
+}
+
+function obtenerCategoriasDinamicasDolar(tipoHtml) {
+    const tipoDb = obtenerTipoNormalizado(tipoHtml);
+    const base = categoriasDolarBase[tipoDb] || [];
+    const nube = categoriasNubeDolar[tipoDb] || [];
+    
+    const dinamicasMovimientos = listaDolares
+        .filter(m => {
+            const mTipo = (m.tipoTransaccion || '').toUpperCase();
+            const mEsIngreso = mTipo.includes('ING') || mTipo.includes('INGRESO');
+            const targetEsIngreso = tipoDb === 'INGRESOS';
+            return mEsIngreso === targetEsIngreso && m.categoria;
+        })
         .map(m => m.categoria.toUpperCase());
-    return Array.from(new Set([...base, ...dinamicas])).sort();
+        
+    return Array.from(new Set([...base, ...nube, ...dinamicasMovimientos])).sort();
 }
 
 function actualizarSelectCategoriasDolar() {
@@ -61,7 +77,6 @@ function actualizarSelectCategoriasDolar() {
     const tipoSeleccionado = selectTipo.value; 
     const catsDisponibles = obtenerCategoriasDinamicasDolar(tipoSeleccionado);
 
-    // Si es un elemento <select>
     if (selectCategoria.tagName === 'SELECT') {
         const valorActual = selectCategoria.value;
         selectCategoria.innerHTML = catsDisponibles.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -70,6 +85,8 @@ function actualizarSelectCategoriasDolar() {
         }
     }
 }
+
+// --- CONEXIÓN Y DATOS DE SUPABASE ---
 
 function configurarRealtimeDolares() {
     const wsProtocol = SUPABASE_URL.startsWith('https') ? 'wss://' : 'ws://';
@@ -100,14 +117,32 @@ function configurarRealtimeDolares() {
 
 async function cargarDolaresNube() {
     try {
+        // Cargar registros de dólares
         let res = await fetch(`${SUPABASE_URL}/rest/v1/dolares?select=*&order=fecha.asc,ID.asc`, {
             headers: SUPABASE_HEADERS
         });
         if (res.ok) {
             listaDolares = await res.json();
-            actualizarSelectCategoriasDolar();
-            procesarYRenderizarDolares();
         }
+
+        // Cargar también categorías generales de la base de datos por si acaso
+        let resCat = await fetch(`${SUPABASE_URL}/rest/v1/categorias?select=*`, {
+            headers: SUPABASE_HEADERS
+        });
+        if (resCat.ok) {
+            let dataCats = await resCat.json();
+            categoriasNubeDolar = { INGRESOS: [], EGRESOS: [] };
+            dataCats.forEach(c => {
+                if (c.tipo && c.nombre) {
+                    let t = c.tipo.toUpperCase();
+                    let tipoKey = (t.includes('ING') || t.includes('INGRESO')) ? 'INGRESOS' : 'EGRESOS';
+                    categoriasNubeDolar[tipoKey].push(c.nombre.toUpperCase());
+                }
+            });
+        }
+
+        actualizarSelectCategoriasDolar();
+        procesarYRenderizarDolares();
     } catch (error) {
         console.error("Error al cargar datos de dólares:", error);
     }
@@ -129,7 +164,9 @@ async function cargarDolaresNubeSilencioso() {
 async function agregarMovimientoDolar() {
     const fecha = document.getElementById('dolar-fecha').value;
     const metodo = document.getElementById('dolar-metodo').value;
-    const tipoTransaccion = document.getElementById('dolar-tipo').value;
+    
+    const tipoHtml = document.getElementById('dolar-tipo').value;
+    const tipoTransaccion = obtenerTipoNormalizado(tipoHtml);
     
     const categoriaInput = document.getElementById('dolar-categoria');
     const categoria = categoriaInput.value.trim().toUpperCase();
@@ -141,7 +178,10 @@ async function agregarMovimientoDolar() {
 
     if (!categoria) return;
 
-    if (categoriasDolarBase[tipoTransaccion] && !categoriasDolarBase[tipoTransaccion].includes(categoria)) {
+    if (!categoriasDolarBase[tipoTransaccion]) {
+        categoriasDolarBase[tipoTransaccion] = [];
+    }
+    if (!categoriasDolarBase[tipoTransaccion].includes(categoria)) {
         categoriasDolarBase[tipoTransaccion].push(categoria);
         categoriasDolarBase[tipoTransaccion].sort();
     }
@@ -167,7 +207,6 @@ async function agregarMovimientoDolar() {
         if (response.ok) {
             document.getElementById('form-dolar').reset();
             document.getElementById('dolar-fecha').value = hoy;
-            actualizarSelectCategoriasDolar();
             await cargarDolaresNube();
             mostrarNotificacion('Movimiento guardado con éxito', 'success');
         } else {
@@ -194,6 +233,8 @@ async function eliminarMovimientoDolar(id) {
     } catch (e) {}
 }
 
+// --- RENDERIZADO Y GRÁFICOS ---
+
 function procesarYRenderizarDolares() {
     const tbody = document.getElementById('tabla-dolares');
     if (!tbody) return;
@@ -211,9 +252,11 @@ function procesarYRenderizarDolares() {
     const datosConSaldo = listaDolares.map(m => {
         let monto = Number(m.montoUsd) || 0;
         let saldoActualFila = 0;
+        const tTrans = (m.tipoTransaccion || '').toUpperCase();
+        const esIngreso = tTrans.includes('ING');
 
         if (m.metodo === 'EFECTIVO') {
-            if (m.tipoTransaccion === 'INGRESOS') {
+            if (esIngreso) {
                 saldoEfectivoAcumulado += monto;
                 totalIngEfectivo += monto;
                 ingresosPorCat[m.categoria] = (ingresosPorCat[m.categoria] || 0) + monto;
@@ -224,7 +267,7 @@ function procesarYRenderizarDolares() {
             }
             saldoActualFila = saldoEfectivoAcumulado;
         } else { 
-            if (m.tipoTransaccion === 'INGRESOS') {
+            if (esIngreso) {
                 saldoZelleAcumulado += monto;
                 totalIngZelle += monto;
                 ingresosPorCat[m.categoria] = (ingresosPorCat[m.categoria] || 0) + monto;
@@ -276,11 +319,13 @@ function procesarYRenderizarDolares() {
             }
         }
 
+        const esIngreso = (m.tipoTransaccion || '').toUpperCase().includes('ING');
+
         tr.innerHTML = `
             <td data-label="ID">${idUnico}</td>
             <td data-label="Fecha">${fechaFormateada}</td>
             <td data-label="Método"><span class="badge ${m.metodo.toLowerCase()}">${m.metodo}</span></td>
-            <td data-label="Tipo"><span class="badge ${m.tipoTransaccion === 'INGRESOS' ? 'success' : 'danger'}">${m.tipoTransaccion}</span></td>
+            <td data-label="Tipo"><span class="badge ${esIngreso ? 'success' : 'danger'}">${m.tipoTransaccion}</span></td>
             <td data-label="Categoría">${m.categoria}</td>
             <td data-label="Monto ($)">$${Number(m.montoUsd).toFixed(2)}</td>
             <td data-label="Saldo Actual"><strong>$${Number(m.saldoActualFila).toFixed(2)}</strong></td>
