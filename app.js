@@ -350,10 +350,10 @@ function calcularYMostrarTotalBsHistorial() {
     const lblTotalBs = document.getElementById('lbl-historial-total-bs');
     if (!lblTotalBs) return;
 
-    let movimientosVisibles = obtenerMovimientosFiltrados();
+    // Usamos el arreglo global 'movimientos' completo para que sea un acumulado histórico real
     let sumaBs = 0;
 
-    movimientosVisibles.forEach(m => {
+    movimientos.forEach(m => {
         const montoVesVal = m.montoVes !== undefined ? m.montoVes : (m.montoUsd * (m.tasa || 1));
         const valorNumerico = Number(montoVesVal) || 0;
 
@@ -825,27 +825,36 @@ async function calcularYMostrarResumenGeneral() {
     let movimientosVisibles = obtenerMovimientosFiltrados();
     let totalIngresosUsd = 0;
     let totalGastosUsd = 0;
-    let sumaBsNeto = 0;
 
-    movimientosVisibles.forEach(m => {
+    // 1. Calculamos el acumulado histórico total real de bolívares usando el arreglo global 'movimientos'
+    let sumaBsTotalHistorico = 0;
+    movimientos.forEach(m => {
         const usd = Number(m.montoUsd) || 0;
         const ves = m.montoVes !== undefined ? Number(m.montoVes) : (usd * (Number(m.tasa) || 1));
+        if (m.tipo === 'Ingreso') {
+            sumaBsTotalHistorico += ves;
+        } else if (m.tipo === 'Gasto') {
+            sumaBsTotalHistorico -= ves;
+        }
+    });
 
+    // 2. Sumamos los ingresos y gastos del periodo visible para los gráficos/tarjetas del mes
+    movimientosVisibles.forEach(m => {
+        const usd = Number(m.montoUsd) || 0;
         if (m.tipo === 'Ingreso') {
             totalIngresosUsd += usd;
-            sumaBsNeto += ves;
         }
         if (m.tipo === 'Gasto') {
             totalGastosUsd += usd;
-            sumaBsNeto -= ves;
         }
     });
 
     if (lblIngresos) lblIngresos.innerText = `$${totalIngresosUsd.toFixed(2)}`;
     if (lblGastos) lblGastos.innerText = `$${totalGastosUsd.toFixed(2)}`;
     
+    // 3. Obtenemos la tasa actual del BCV y dividimos los Bs totales históricos reales
     const tasaActual = await obtenerTasaActualBCV();
-    const disponibleNeto = tasaActual > 0 ? (sumaBsNeto / tasaActual) : (totalIngresosUsd - totalGastosUsd);
+    const disponibleNeto = tasaActual > 0 ? (sumaBsTotalHistorico / tasaActual) : 0;
 
     if (lblDisponible) {
         lblDisponible.innerText = `$${disponibleNeto.toFixed(2)}`;
