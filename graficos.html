@@ -8,14 +8,159 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+    <style>
+        /* ==========================================================
+           DETALLE DE REGISTROS AL HACER CLICK EN UNA BARRA
+           ========================================================== */
+        .chart-click-help {
+            margin: 10px 0 0;
+            color: var(--text-secondary, #64748b);
+            font-size: 0.84rem;
+            text-align: left;
+        }
+
+        .chart-records-panel {
+            display: none;
+            margin-top: 15px;
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 10px;
+            overflow: hidden;
+            background: #f8fafc;
+        }
+
+        .chart-records-panel.visible {
+            display: block;
+        }
+
+        .chart-records-panel details {
+            width: 100%;
+        }
+
+        .chart-records-panel summary {
+            cursor: pointer;
+            list-style: none;
+            padding: 13px 15px;
+            background: #f1f5f9;
+            font-weight: 700;
+            color: var(--text-primary, #1e293b);
+            user-select: none;
+        }
+
+        .chart-records-panel summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .chart-records-panel summary::after {
+            content: "▾";
+            float: right;
+            font-size: 1rem;
+            transition: transform 0.2s ease;
+        }
+
+        .chart-records-panel details:not([open]) summary::after {
+            transform: rotate(-90deg);
+        }
+
+        .chart-records-content {
+            padding: 15px;
+            background: #fff;
+        }
+
+        .chart-records-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .chart-records-title {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--text-primary, #1e293b);
+        }
+
+        .chart-records-count {
+            color: var(--text-secondary, #64748b);
+            font-size: 0.86rem;
+            font-weight: 600;
+        }
+
+        .chart-records-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 8px;
+        }
+
+        .chart-records-table {
+            width: 100%;
+            min-width: 700px;
+            border-collapse: collapse;
+            background: #fff;
+        }
+
+        .chart-records-table th,
+        .chart-records-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+            text-align: left;
+            vertical-align: top;
+            white-space: nowrap;
+        }
+
+        .chart-records-table th {
+            background: #f8fafc;
+            color: var(--text-secondary, #64748b);
+            font-size: 0.82rem;
+            position: static;
+        }
+
+        .chart-records-table td.descripcion-registro {
+            white-space: normal;
+            min-width: 240px;
+        }
+
+        .chart-records-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .registro-ingreso {
+            color: var(--success, #22c55e);
+            font-weight: 700;
+        }
+
+        .registro-gasto {
+            color: var(--danger, #ef4444);
+            font-weight: 700;
+        }
+
+        .chart-records-empty {
+            padding: 14px;
+            border-radius: 8px;
+            background: #f8fafc;
+            color: var(--text-secondary, #64748b);
+            font-size: 0.9rem;
+        }
+
+        /* Indica visualmente que las barras se pueden pulsar */
+        #graficoIngresos,
+        #graficoGastos,
+        #graficoPresupuestos {
+            cursor: pointer;
+        }
+    </style>
 </head>
+
 <body>
     <div class="container">
         <!-- Título y Subtítulo Fijos -->
         <div style="text-align: center; margin-bottom: 20px;">
             <h1>Gestor Financiero</h1>
             <p>Yarizbeli Quijada</p>
-            
+
             <div class="nav-buttons" style="margin-top: 15px;">
                 <a href="index.html" class="btn"><i class="fas fa-home"></i> Movimientos</a>
                 <a href="presupuestos.html" class="btn"><i class="fas fa-bullseye"></i> Presupuestos & Categorías</a>
@@ -54,25 +199,81 @@
             <button id="btn-quitar-filtro" class="btn-secondary">Mes Actual</button>
         </div>
 
-        <!-- Contenedores de los Gráficos Principales -->
+        <!-- ======================================================
+             GRÁFICO DE INGRESOS
+             ====================================================== -->
         <div class="card" style="margin-bottom: 20px;">
             <h3>Ingresos por Categoría ($)</h3>
+
             <div style="position: relative; height: 350px; width: 100%;">
                 <canvas id="graficoIngresos"></canvas>
             </div>
-        </div>
 
-        <div class="card" style="margin-bottom: 20px;">
-            <h3>Gastos por Categoría ($)</h3>
-            <div style="position: relative; height: 350px; width: 100%;">
-                <canvas id="graficoGastos"></canvas>
+            <p class="chart-click-help">
+                <i class="fas fa-hand-pointer"></i>
+                Haz clic en una barra para ver todos los registros de esa categoría.
+            </p>
+
+            <div id="detalleGraficoIngresos" class="chart-records-panel">
+                <details open>
+                    <summary>
+                        <i class="fas fa-list"></i>
+                        Registros de la categoría seleccionada
+                    </summary>
+                    <div class="chart-records-content"></div>
+                </details>
             </div>
         </div>
 
+        <!-- ======================================================
+             GRÁFICO DE GASTOS
+             ====================================================== -->
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>Gastos por Categoría ($)</h3>
+
+            <div style="position: relative; height: 350px; width: 100%;">
+                <canvas id="graficoGastos"></canvas>
+            </div>
+
+            <p class="chart-click-help">
+                <i class="fas fa-hand-pointer"></i>
+                Haz clic en una barra para ver todos los registros de esa categoría.
+            </p>
+
+            <div id="detalleGraficoGastos" class="chart-records-panel">
+                <details open>
+                    <summary>
+                        <i class="fas fa-list"></i>
+                        Registros de la categoría seleccionada
+                    </summary>
+                    <div class="chart-records-content"></div>
+                </details>
+            </div>
+        </div>
+
+        <!-- ======================================================
+             GRÁFICO DE PRESUPUESTO VS GASTO REAL
+             ====================================================== -->
         <div class="card" style="margin-bottom: 20px;">
             <h3>Presupuesto vs Gasto Real por Categoría ($)</h3>
+
             <div style="position: relative; height: 450px; width: 100%;">
                 <canvas id="graficoPresupuestos"></canvas>
+            </div>
+
+            <p class="chart-click-help">
+                <i class="fas fa-hand-pointer"></i>
+                Haz clic en cualquier barra de una categoría para ver todos sus registros de gasto.
+            </p>
+
+            <div id="detalleGraficoPresupuestos" class="chart-records-panel">
+                <details open>
+                    <summary>
+                        <i class="fas fa-list"></i>
+                        Registros de la categoría seleccionada
+                    </summary>
+                    <div class="chart-records-content"></div>
+                </details>
             </div>
         </div>
 
@@ -80,22 +281,377 @@
         <section class="card" style="margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
                 <div>
-                    <h3 style="margin: 0; font-size: 1.1rem;"><i class="fas fa-chart-line"></i> Indicador de Impacto por Tasas y Diferencial ($ USD)</h3>
+                    <h3 style="margin: 0; font-size: 1.1rem;">
+                        <i class="fas fa-chart-line"></i>
+                        Indicador de Impacto por Tasas y Diferencial ($ USD)
+                    </h3>
                     <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: #666;">
-                        Tasa promedio ponderada del periodo: <strong id="lbl-tasa-promedio-periodo">0.00 Bs/$</strong>
+                        Tasa promedio ponderada del periodo:
+                        <strong id="lbl-tasa-promedio-periodo">0.00 Bs/$</strong>
                     </p>
                 </div>
+
                 <div style="text-align: right;">
-                    <span style="font-size: 0.8rem; font-weight: bold; color: #555;">DIFERENCIAL CAMBIARIO NETO:</span>
-                    <h3 id="lbl-desfase-neto" style="margin: 0; font-size: 1.3rem;">$0.00 USD</h3>
+                    <span style="font-size: 0.8rem; font-weight: bold; color: #555;">
+                        DIFERENCIAL CAMBIARIO NETO:
+                    </span>
+                    <h3 id="lbl-desfase-neto" style="margin: 0; font-size: 1.3rem;">
+                        $0.00 USD
+                    </h3>
                 </div>
             </div>
+
             <div style="position: relative; height: 300px; width: 100%;">
                 <canvas id="graficoImpactoTasas"></canvas>
             </div>
         </section>
     </div>
 
+    <!-- Primero se carga la lógica existente -->
     <script src="app.js"></script>
+
+    <!-- ==========================================================
+         NUEVA FUNCIÓN:
+         CLICK EN UNA BARRA -> LISTAR TODOS LOS REGISTROS
+         ========================================================== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const configuracion = {
+                graficoIngresos: {
+                    tipo: 'Ingreso',
+                    panelId: 'detalleGraficoIngresos',
+                    tituloTipo: 'ingreso'
+                },
+                graficoGastos: {
+                    tipo: 'Gasto',
+                    panelId: 'detalleGraficoGastos',
+                    tituloTipo: 'gasto'
+                },
+                graficoPresupuestos: {
+                    tipo: 'Gasto',
+                    panelId: 'detalleGraficoPresupuestos',
+                    tituloTipo: 'gasto'
+                }
+            };
+
+            function escaparHtml(valor) {
+                return String(valor ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function normalizarTexto(valor) {
+                return String(valor ?? '')
+                    .trim()
+                    .toUpperCase();
+            }
+
+            function obtenerIdMovimiento(movimiento) {
+                return movimiento.ID !== undefined ? movimiento.ID : movimiento.id;
+            }
+
+            function obtenerMontoVes(movimiento) {
+                if (movimiento.montoVes !== undefined && movimiento.montoVes !== null) {
+                    return Number(movimiento.montoVes) || 0;
+                }
+
+                const usd = Number(movimiento.montoUsd) || 0;
+                const tasa = Number(movimiento.tasa) || 1;
+
+                return usd * tasa;
+            }
+
+            function formatearUsd(valor) {
+                return `$${(Number(valor) || 0).toFixed(2)}`;
+            }
+
+            function formatearBs(valor) {
+                const numero = Number(valor) || 0;
+                const partes = numero.toFixed(2).split('.');
+
+                partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+                return `Bs. ${partes.join(',')}`;
+            }
+
+            function formatearFecha(fecha) {
+                if (!fecha) return '';
+
+                const partes = String(fecha).split('-');
+
+                if (partes.length !== 3) {
+                    return String(fecha);
+                }
+
+                const anio = Number(partes[0]);
+                const mes = Number(partes[1]) - 1;
+                const dia = Number(partes[2]);
+
+                if (!anio || mes < 0 || dia < 1) {
+                    return String(fecha);
+                }
+
+                const fechaObj = new Date(anio, mes, dia);
+
+                return fechaObj.toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            }
+
+            function ordenarMovimientos(movs) {
+                return [...movs].sort((a, b) => {
+                    const fechaA = new Date(a.fecha || '1900-01-01');
+                    const fechaB = new Date(b.fecha || '1900-01-01');
+
+                    const comparacionFecha = fechaB - fechaA;
+
+                    if (comparacionFecha !== 0) {
+                        return comparacionFecha;
+                    }
+
+                    const idA = Number(obtenerIdMovimiento(a)) || 0;
+                    const idB = Number(obtenerIdMovimiento(b)) || 0;
+
+                    return idB - idA;
+                });
+            }
+
+            function obtenerMovimientosVisibles() {
+                if (typeof obtenerMovimientosFiltrados === 'function') {
+                    return obtenerMovimientosFiltrados();
+                }
+
+                return [];
+            }
+
+            function ocultarTodosLosPaneles() {
+                Object.values(configuracion).forEach(config => {
+                    const panel = document.getElementById(config.panelId);
+
+                    if (!panel) return;
+
+                    panel.classList.remove('visible');
+
+                    const details = panel.querySelector('details');
+
+                    if (details) {
+                        details.open = true;
+                    }
+                });
+            }
+
+            function mostrarRegistrosCategoria(chartId, categoria) {
+                const config = configuracion[chartId];
+
+                if (!config) return;
+
+                const panel = document.getElementById(config.panelId);
+
+                if (!panel) return;
+
+                const contenido = panel.querySelector('.chart-records-content');
+
+                if (!contenido) return;
+
+                const categoriaNormalizada = normalizarTexto(categoria);
+
+                let movimientosVisibles = obtenerMovimientosVisibles();
+
+                let registros = movimientosVisibles.filter(m => {
+                    return m.tipo === config.tipo &&
+                        normalizarTexto(m.categoria) === categoriaNormalizada;
+                });
+
+                registros = ordenarMovimientos(registros);
+
+                panel.classList.add('visible');
+
+                const details = panel.querySelector('details');
+
+                if (details) {
+                    details.open = true;
+                }
+
+                if (registros.length === 0) {
+                    contenido.innerHTML = `
+                        <div class="chart-records-header">
+                            <h4 class="chart-records-title">
+                                ${escaparHtml(categoria)}
+                            </h4>
+                            <span class="chart-records-count">0 registros</span>
+                        </div>
+
+                        <div class="chart-records-empty">
+                            No existen registros de ${config.tituloTipo}
+                            para la categoría
+                            <strong>${escaparHtml(categoria)}</strong>
+                            en el periodo seleccionado.
+                        </div>
+                    `;
+
+                    panel.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest'
+                    });
+
+                    return;
+                }
+
+                const filas = registros.map(movimiento => {
+                    const claseTipo = movimiento.tipo === 'Ingreso'
+                        ? 'registro-ingreso'
+                        : 'registro-gasto';
+
+                    const tasa = Number(movimiento.tasa) || 0;
+                    const montoUsd = Number(movimiento.montoUsd) || 0;
+                    const montoBs = obtenerMontoVes(movimiento);
+
+                    return `
+                        <tr>
+                            <td>${escaparHtml(formatearFecha(movimiento.fecha))}</td>
+
+                            <td>
+                                <span class="${claseTipo}">
+                                    ${escaparHtml(movimiento.tipo)}
+                                </span>
+                            </td>
+
+                            <td class="descripcion-registro">
+                                ${escaparHtml(movimiento.descripcion || 'Sin descripción')}
+                            </td>
+
+                            <td>
+                                ${escaparHtml(movimiento.categoria || '')}
+                            </td>
+
+                            <td>
+                                <strong>${escaparHtml(formatearUsd(montoUsd))}</strong>
+                            </td>
+
+                            <td>
+                                ${escaparHtml(formatearBs(montoBs))}
+                            </td>
+
+                            <td>
+                                ${tasa > 0 ? `${escaparHtml(formatearBs(tasa))} / $` : '—'}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                contenido.innerHTML = `
+                    <div class="chart-records-header">
+                        <h4 class="chart-records-title">
+                            <i class="fas fa-folder-open"></i>
+                            ${escaparHtml(categoria)}
+                        </h4>
+
+                        <span class="chart-records-count">
+                            ${registros.length}
+                            ${registros.length === 1 ? 'registro' : 'registros'}
+                        </span>
+                    </div>
+
+                    <div class="chart-records-table-wrapper">
+                        <table class="chart-records-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Descripción</th>
+                                    <th>Categoría</th>
+                                    <th>USD ($)</th>
+                                    <th>Monto Bs.</th>
+                                    <th>Tasa</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                ${filas}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                panel.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+            }
+
+            function prepararClickEnGrafico(canvas) {
+                if (!canvas) return;
+
+                canvas.addEventListener('click', event => {
+                    const chart = Chart.getChart(canvas);
+
+                    if (!chart) {
+                        return;
+                    }
+
+                    const elementos = chart.getElementsAtEventForMode(
+                        event,
+                        'nearest',
+                        { intersect: true },
+                        true
+                    );
+
+                    if (!elementos || elementos.length === 0) {
+                        return;
+                    }
+
+                    const elemento = elementos[0];
+                    const indiceBarra = elemento.index;
+
+                    const categoria = chart.data &&
+                        chart.data.labels &&
+                        chart.data.labels[indiceBarra];
+
+                    if (!categoria) {
+                        return;
+                    }
+
+                    mostrarRegistrosCategoria(
+                        canvas.id,
+                        categoria
+                    );
+                });
+            }
+
+            prepararClickEnGrafico(
+                document.getElementById('graficoIngresos')
+            );
+
+            prepararClickEnGrafico(
+                document.getElementById('graficoGastos')
+            );
+
+            prepararClickEnGrafico(
+                document.getElementById('graficoPresupuestos')
+            );
+
+            /* Cuando cambia el mes, ocultamos el detalle anterior
+               para evitar mostrar registros del periodo anterior. */
+            const selectorMes = document.getElementById('presupuesto-mes-selector');
+
+            if (selectorMes) {
+                selectorMes.addEventListener('change', ocultarTodosLosPaneles);
+            }
+
+            const botonFiltro = document.getElementById('btn-quitar-filtro');
+
+            if (botonFiltro) {
+                botonFiltro.addEventListener('click', () => {
+                    setTimeout(ocultarTodosLosPaneles, 0);
+                });
+            }
+        });
+    </script>
 </body>
 </html>

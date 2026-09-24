@@ -4,8 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestor Financiero - Dólares</title>
+
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    >
+
     <style>
         .badge {
             padding: 4px 8px;
@@ -13,11 +18,32 @@
             font-size: 0.85rem;
             font-weight: bold;
         }
-        .badge.efectivo { background-color: #e2f0d9; color: #385723; }
-        .badge.zelle { background-color: #d9e1f2; color: #1f3864; }
-        .badge.success { background-color: #d4edda; color: #155724; }
-        .badge.danger { background-color: #f8d7da; color: #721c24; }
-        
+
+        .badge.efectivo {
+            background-color: #e2f0d9;
+            color: #385723;
+        }
+
+        .badge.zelle {
+            background-color: #d9e1f2;
+            color: #1f3864;
+        }
+
+        .badge.binance {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .badge.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .badge.danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
         .toast-alerta {
             position: fixed;
             bottom: 20px;
@@ -29,169 +55,711 @@
             display: none;
             z-index: 1000;
         }
-        .toast-alerta.show { display: block; }
-        .toast-alerta.success { background-color: #28a745; }
-        .toast-alerta.error { background-color: #dc3545; }
-        .toast-alerta.info { background-color: #17a2b8; }
+
+        .toast-alerta.show {
+            display: block;
+        }
+
+        .toast-alerta.success {
+            background-color: #28a745;
+        }
+
+        .toast-alerta.error {
+            background-color: #dc3545;
+        }
+
+        .toast-alerta.info {
+            background-color: #17a2b8;
+        }
+
+        /* TOTAL GENERAL SIN TARJETA DEGRADADA */
+        .total-general-card {
+            background: transparent;
+            color: #1f3864;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+            margin-bottom: 25px;
+        }
+
+        .total-general-contenido {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 4px;
+            border-bottom: 1px solid #1f3864;
+        }
+
+        .total-general-titulo {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .total-general-monto {
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+
+        .detalle-grafico {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .detalle-grafico table {
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .detalle-grafico h4 {
+            margin-bottom: 10px;
+        }
+
+        .filtro-ayuda {
+            margin-top: 8px;
+            color: #777;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <!-- Título y Navegación -->
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h1>Gestor Financiero</h1>
-            <p>Yarizbeli Quijada</p>
-            
-            <div class="nav-buttons" style="margin-top: 15px;">
-                <a href="index.html" class="btn"><i class="fas fa-home"></i> Movimientos</a>
-                <a href="presupuestos.html" class="btn"><i class="fas fa-bullseye"></i> Presupuestos & Categorías</a>
-                <a href="graficos.html" class="btn"><i class="fas fa-chart-bar"></i> Gráficos</a>
-                <a href="dolares.html" class="btn active"><i class="fas fa-money-bill-wave"></i> Dólares</a>
-            </div>
+
+<div class="container">
+
+    <!-- CABECERA -->
+    <div style="text-align:center; margin-bottom:20px;">
+
+        <h1>Gestor Financiero</h1>
+        <p>Yarizbeli Quijada</p>
+
+        <div class="nav-buttons" style="margin-top:15px;">
+
+            <a href="index.html" class="btn">
+                <i class="fas fa-home"></i>
+                Movimientos
+            </a>
+
+            <a href="presupuestos.html" class="btn">
+                <i class="fas fa-bullseye"></i>
+                Presupuestos & Categorías
+            </a>
+
+            <a href="graficos.html" class="btn">
+                <i class="fas fa-chart-bar"></i>
+                Gráficos
+            </a>
+
+            <a href="dolares.html" class="btn active">
+                <i class="fas fa-money-bill-wave"></i>
+                Dólares
+            </a>
+
         </div>
-
-        <!-- Tarjetas de Resumen -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px;">
-            <!-- Resumen Efectivo -->
-            <section class="card" style="margin: 0;">
-                <h3 style="margin-top: 0; color: #385723;"><i class="fas fa-wallet"></i> Efectivo ($)</h3>
-                <div style="display: flex; justify-content: space-between; margin: 10px 0;">
-                    <span>Saldo Actual:</span>
-                    <strong id="lbl-saldo-efectivo" style="font-size: 1.2rem;">$0.00</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #666;">
-                    <span>Total Ingresos: <span id="lbl-ing-efectivo" class="text-green">$0.00</span></span>
-                    <span>Total Egresos: <span id="lbl-egr-efectivo" class="text-red">$0.00</span></span>
-                </div>
-            </section>
-
-            <!-- Resumen Zelle -->
-            <section class="card" style="margin: 0;">
-                <h3 style="margin-top: 0; color: #1f3864;"><i class="fas fa-university"></i> Zelle ($)</h3>
-                <div style="display: flex; justify-content: space-between; margin: 10px 0;">
-                    <span>Saldo Actual:</span>
-                    <strong id="lbl-saldo-zelle" style="font-size: 1.2rem;">$0.00</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #666;">
-                    <span>Total Ingresos: <span id="lbl-ing-zelle" class="text-green">$0.00</span></span>
-                    <span>Total Egresos: <span id="lbl-egr-zelle" class="text-red">$0.00</span></span>
-                </div>
-            </section>
-        </div>
-
-        <!-- Formulario de Registro de Dólares -->
-        <section class="card">
-            <h3>Registrar Movimiento en Dólares</h3>
-            <form id="form-dolar">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
-                    <div class="form-group">
-                        <label for="dolar-fecha">Fecha</label>
-                        <input type="date" id="dolar-fecha" class="form-control" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="dolar-metodo">Método</label>
-                        <select id="dolar-metodo" class="form-control">
-                            <option value="EFECTIVO">Efectivo</option>
-                            <option value="ZELLE">Zelle</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="dolar-tipo">Tipo de Transacción</label>
-                        <select id="dolar-tipo" class="form-control">
-                            <option value="INGRESOS">INGRESOS</option>
-                            <option value="EGRESOS">EGRESOS</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="dolar-categoria">Categoría</label>
-                        <!-- CORREGIDO: Ahora es un select que se alimenta y actualiza de forma dinámica -->
-                        <select id="dolar-categoria" class="form-control" required>
-                            <!-- Las opciones se cargan automáticamente desde el script -->
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="dolar-monto">Monto ($)</label>
-                        <input type="number" step="0.01" id="dolar-monto" class="form-control" placeholder="0.00" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="dolar-tasa">Tasa Asociada (Bs.S)</label>
-                        <input type="number" step="0.01" id="dolar-tasa" class="form-control" value="1" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="dolar-retire">¿Retiro?</label>
-                        <select id="dolar-retire" class="form-control">
-                            <option value="NO">NO</option>
-                            <option value="SI">SI</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group" style="grid-column: 1 / -1;">
-                        <label for="dolar-desc">Descripción</label>
-                        <input type="text" id="dolar-desc" class="form-control" placeholder="Detalle del movimiento...">
-                    </div>
-                </div>
-
-                <button type="submit" class="btn bg-green" style="margin-top: 15px; width: 100%; justify-content: center;">
-                    <i class="fas fa-save"></i> Guardar Movimiento en Dólares
-                </button>
-            </form>
-        </section>
-
-        <!-- Gráficos -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 25px;">
-            <section class="card" style="margin: 0; height: 320px;">
-                <h4 style="text-align: center; margin-top: 0;">Ingresos por Categoría ($)</h4>
-                <div style="position: relative; height: 260px;">
-                    <canvas id="graficoIngresosDolar"></canvas>
-                </div>
-            </section>
-            <section class="card" style="margin: 0; height: 320px;">
-                <h4 style="text-align: center; margin-top: 0;">Egresos por Categoría ($)</h4>
-                <div style="position: relative; height: 260px;">
-                    <canvas id="graficoEgresosDolar"></canvas>
-                </div>
-            </section>
-        </div>
-
-        <!-- Historial / Tabla -->
-        <section class="card">
-            <h3 style="margin-top: 0;">Historial de Dólares</h3>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Fecha</th>
-                            <th>Método</th>
-                            <th>Tipo</th>
-                            <th>Categoría</th>
-                            <th>Monto ($)</th>
-                            <th>Saldo Actual</th>
-                            <th>Tasa</th>
-                            <th>Descripción</th>
-                            <th>Retiro</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-dolares">
-                        <!-- Los datos se cargan vía script -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
     </div>
 
-    <div id="toast-alerta" class="toast-alerta"></div>
 
-    <!-- Librerías de gráficos -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    <script src="dolares.js"></script>
+    <!-- ====================================================== -->
+    <!-- TOTAL GENERAL -->
+    <!-- ====================================================== -->
+
+    <section class="card total-general-card">
+
+        <div class="total-general-contenido">
+
+            <span class="total-general-titulo">
+                Total General USD
+            </span>
+
+            <strong
+                id="lbl-total-general"
+                class="total-general-monto"
+            >
+                $0.00
+            </strong>
+
+        </div>
+
+    </section>
+
+
+    <!-- ====================================================== -->
+    <!-- RESÚMENES -->
+    <!-- ====================================================== -->
+
+    <div style="
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+        gap:20px;
+        margin-bottom:25px;
+    ">
+
+        <!-- EFECTIVO -->
+        <section class="card">
+
+            <h3 style="color:#385723;">
+                <i class="fas fa-wallet"></i>
+                Efectivo ($)
+            </h3>
+
+            <div style="
+                display:flex;
+                justify-content:space-between;
+            ">
+                <span>Saldo Actual:</span>
+
+                <strong id="lbl-saldo-efectivo">
+                    $0.00
+                </strong>
+            </div>
+
+            <hr>
+
+            <div style="
+                display:flex;
+                justify-content:space-between;
+            ">
+                <span>Ingresos:</span>
+
+                <span id="lbl-ing-efectivo">
+                    $0.00
+                </span>
+            </div>
+
+            <div style="
+                display:flex;
+                justify-content:space-between;
+            ">
+                <span>Egresos:</span>
+
+                <span id="lbl-egr-efectivo">
+                    $0.00
+                </span>
+            </div>
+
+        </section>
+
+
+        <!-- ZELLE -->
+        <section class="card">
+
+            <h3 style="color:#1f3864;">
+                <i class="fas fa-university"></i>
+                Zelle ($)
+            </h3>
+
+            <div style="
+                display:flex;
+                justify-content:space-between;
+            ">
+                <span>Saldo Actual:</span>
+
+                <strong id="lbl-saldo-zelle">
+                    $0.00
+                </strong>
+            </div>
+
+            <hr>
+
+            <div style="
+                display:flex;
+                justify-content:space-between;
+            ">
+                <span>Ingresos:</span>
+
+                <span id="lbl-ing-zelle">
+                    $0.00
+                </span>
+            </div>
+
+            <div style="
+                display:flex;
+                justify-content:space-between;
+            ">
+                <span>Egresos:</span>
+
+                <span id="lbl-egr-zelle">
+                    $0.00
+                </span>
+            </div>
+
+        </section>
+
+
+        <!-- BINANCE -->
+        <section class="card">
+
+            <h3 style="color:#d97706;">
+                <i class="fas fa-coins"></i>
+                Binance ($)
+            </h3>
+
+            <div style="
+                display:flex;
+                justify-content:space-between;
+            ">
+                <span>Saldo Actual:</span>
+
+                <strong id="lbl-saldo-binance">
+                    $0.00
+                </strong>
+            </div>
+
+            <hr>
+
+            <div style="
+                display:flex;
+                justify-content:space-between;
+            ">
+                <span>Ingresos:</span>
+
+                <span id="lbl-ing-binance">
+                    $0.00
+                </span>
+            </div>
+
+            <div style="
+                display:flex;
+                justify-content:space-between;
+            ">
+                <span>Egresos:</span>
+
+                <span id="lbl-egr-binance">
+                    $0.00
+                </span>
+            </div>
+
+        </section>
+
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- FILTRO POR MES -->
+    <!-- ====================================================== -->
+
+    <section class="card">
+
+        <h3>Filtro por Mes</h3>
+
+        <input
+            type="month"
+            id="filtro-mes-dolar"
+            class="form-control"
+        >
+
+        <div class="filtro-ayuda">
+            Déjalo vacío para mostrar todos los registros.
+        </div>
+
+    </section>
+
+
+    <!-- ====================================================== -->
+    <!-- FORMULARIO -->
+    <!-- ====================================================== -->
+
+    <section class="card">
+
+        <h3>Registrar Movimiento en Dólares</h3>
+
+        <form id="form-dolar">
+
+            <div style="
+                display:grid;
+                grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+                gap:15px;
+            ">
+
+                <!-- FECHA -->
+                <div class="form-group">
+
+                    <label for="dolar-fecha">
+                        Fecha
+                    </label>
+
+                    <input
+                        type="date"
+                        id="dolar-fecha"
+                        class="form-control"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- MÉTODO -->
+                <div class="form-group">
+
+                    <label for="dolar-metodo">
+                        Método
+                    </label>
+
+                    <select
+                        id="dolar-metodo"
+                        class="form-control"
+                    >
+
+                        <option value="EFECTIVO">
+                            Efectivo
+                        </option>
+
+                        <option value="ZELLE">
+                            Zelle
+                        </option>
+
+                        <option value="BINANCE">
+                            Binance
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- TIPO -->
+                <div class="form-group">
+
+                    <label for="dolar-tipo">
+                        Tipo
+                    </label>
+
+                    <select
+                        id="dolar-tipo"
+                        class="form-control"
+                    >
+
+                        <option value="INGRESOS">
+                            INGRESOS
+                        </option>
+
+                        <option value="EGRESOS">
+                            EGRESOS
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- CATEGORÍA -->
+                <div class="form-group">
+
+                    <label for="dolar-categoria">
+                        Categoría
+                    </label>
+
+                    <select
+                        id="dolar-categoria"
+                        class="form-control"
+                        required
+                    >
+                    </select>
+
+                </div>
+
+
+                <!-- MONTO -->
+                <div class="form-group">
+
+                    <label for="dolar-monto">
+                        Monto ($)
+                    </label>
+
+                    <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        id="dolar-monto"
+                        class="form-control"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- TASA -->
+                <div class="form-group">
+
+                    <label for="dolar-tasa">
+                        Tasa Asociada
+                    </label>
+
+                    <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        id="dolar-tasa"
+                        class="form-control"
+                        value="1"
+                    >
+
+                </div>
+
+
+                <!-- RETIRO -->
+                <div class="form-group">
+
+                    <label for="dolar-retire">
+                        ¿Retiro?
+                    </label>
+
+                    <select
+                        id="dolar-retire"
+                        class="form-control"
+                    >
+
+                        <option value="NO">
+                            NO
+                        </option>
+
+                        <option value="SI">
+                            SI
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- DESCRIPCIÓN -->
+                <div
+                    class="form-group"
+                    style="grid-column:1/-1;"
+                >
+
+                    <label for="dolar-desc">
+                        Descripción
+                    </label>
+
+                    <input
+                        type="text"
+                        id="dolar-desc"
+                        class="form-control"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="btn bg-green"
+                style="
+                    margin-top:15px;
+                    width:100%;
+                    justify-content:center;
+                "
+            >
+                <i class="fas fa-save"></i>
+                Guardar Movimiento
+            </button>
+
+        </form>
+
+    </section>
+
+
+    <!-- ====================================================== -->
+<!-- GRAFICOS DE DOLARES                                   -->
+<!-- ====================================================== -->
+
+<div style="
+    display:flex;
+    flex-direction:column;
+    gap:30px;
+    margin-bottom:25px;
+    width:100%;
+">
+
+    <!-- ================================================== -->
+    <!-- INGRESOS                                          -->
+    <!-- ================================================== -->
+
+    <section class="card" style="
+        width:100%;
+        margin:0;
+        padding:20px;
+        box-sizing:border-box;
+    ">
+
+        <h3 style="
+            text-align:center;
+            margin:0;
+            color:#1f3864;
+        ">
+            Ingresos por Categoría ($)
+        </h3>
+
+        <!-- TOTAL DEL FILTRO -->
+        <div
+            style="
+                text-align:center;
+                margin-top:6px;
+                margin-bottom:15px;
+                font-size:1rem;
+                font-weight:bold;
+                color:#385723;
+            "
+        >
+            Total ingresos del período:
+            <span id="total-ingresos-filtrado-dolar">
+                $0.00
+            </span>
+        </div>
+
+        <div style="
+            position:relative;
+            width:100%;
+            height:380px;
+        ">
+            <canvas id="graficoIngresosDolar"></canvas>
+        </div>
+
+        <p style="
+            text-align:center;
+            color:#53709b;
+            margin:14px 0 0 0;
+        ">
+            Haz clic en una barra para ver los registros
+        </p>
+
+        <div
+            id="detalleGraficoIngresosDolar"
+            class="detalle-grafico"
+            style="display:none;"
+        >
+        </div>
+
+    </section>
+
+
+    <!-- ================================================== -->
+    <!-- EGRESOS                                           -->
+    <!-- ================================================== -->
+
+    <section class="card" style="
+        width:100%;
+        margin:0;
+        padding:20px;
+        box-sizing:border-box;
+    ">
+
+        <h3 style="
+            text-align:center;
+            margin:0;
+            color:#1f3864;
+        ">
+            Egresos por Categoría ($)
+        </h3>
+
+        <!-- TOTAL DEL FILTRO -->
+        <div
+            style="
+                text-align:center;
+                margin-top:6px;
+                margin-bottom:15px;
+                font-size:1rem;
+                font-weight:bold;
+                color:#b42318;
+            "
+        >
+            Total egresos del período:
+            <span id="total-egresos-filtrado-dolar">
+                $0.00
+            </span>
+        </div>
+
+        <div style="
+            position:relative;
+            width:100%;
+            height:380px;
+        ">
+            <canvas id="graficoEgresosDolar"></canvas>
+        </div>
+
+        <p style="
+            text-align:center;
+            color:#53709b;
+            margin:14px 0 0 0;
+        ">
+            Haz clic en una barra para ver los registros
+        </p>
+
+        <div
+            id="detalleGraficoEgresosDolar"
+            class="detalle-grafico"
+            style="display:none;"
+        >
+        </div>
+
+    </section>
+
+</div>
+
+    <!-- ====================================================== -->
+    <!-- HISTORIAL -->
+    <!-- ====================================================== -->
+
+    <section class="card">
+
+        <h3>Historial de Dólares</h3>
+
+        <div style="overflow-x:auto;">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Método</th>
+                        <th>Tipo</th>
+                        <th>Categoría</th>
+                        <th>Monto ($)</th>
+                        <th>Saldo Actual</th>
+                        <th>Tasa</th>
+                        <th>Descripción</th>
+                        <th>Retiro</th>
+                        <th>Acciones</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="tabla-dolares">
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+<!-- TOAST -->
+<div
+    id="toast-alerta"
+    class="toast-alerta"
+></div>
+
+
+<!-- CHART.JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- DATALABELS -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+<!-- TU JS -->
+<script src="dolares.js"></script>
+
 </body>
 </html>
